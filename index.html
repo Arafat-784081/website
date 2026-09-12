@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixMate - Find Trusted Workers Near You</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif; }
+:root {
+  --primary:#2563eb;
+  --primary-dark:#1e40af;
+  --accent:#f59e0b;
+  --success:#10b981;
+  --danger:#ef4444;
+  --dark:#1e293b;
+  --gray:#64748b;
+  --light:#f1f5f9;
+  --white:#ffffff;
+}
+body { background:var(--light); color:var(--dark); overflow-x:hidden; }
+a { text-decoration:none; color:inherit; }
+button { cursor:pointer; border:none; font-family:inherit; }
+
+/* ===== SPLASH SCREEN ===== */
+#splash {
+  position:fixed; inset:0; background:linear-gradient(135deg,#2563eb,#1e40af);
+  color:white; display:flex; flex-direction:column; justify-content:center;
+  align-items:center; z-index:9999; transition:opacity .6s;
+}
+#splash .logo { font-size:64px; font-weight:900; letter-spacing:4px; margin-bottom:10px; animation:pop .8s ease; }
+#splash .tagline { font-size:20px; opacity:.9; margin-bottom:30px; animation:fadeIn 1s ease; }
+#splash .subtitle { font-size:16px; opacity:.85; font-style:italic; margin-bottom:40px; }
+#splash .info-box {
+  background:rgba(255,255,255,.12); padding:25px 40px; border-radius:16px;
+  backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
+  text-align:center; animation:fadeIn 1.2s ease;
+}
+#splash .info-box p { margin:8px 0; font-size:15px; }
+#splash .info-box strong { color:#fbbf24; }
+
+/* ===== TEAM SCREEN ===== */
+#team {
+  position:fixed; inset:0; background:linear-gradient(135deg,#1e293b,#0f172a);
+  color:white; display:none; flex-direction:column; justify-content:center;
+  align-items:center; z-index:9998; padding:20px; overflow-y:auto;
+}
+#team h2 { font-size:38px; margin-bottom:30px; color:#fbbf24; animation:pop .6s; }
+.team-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; max-width:1100px; width:100%; }
+.team-card {
+  background:rgba(255,255,255,.08); padding:20px; border-radius:14px;
+  border:1px solid rgba(255,255,255,.15); text-align:center;
+  animation:slideUp .6s ease backwards;
+}
+.team-card:nth-child(1){animation-delay:.1s}
+.team-card:nth-child(2){animation-delay:.2s}
+.team-card:nth-child(3){animation-delay:.3s}
+.team-card:nth-child(4){animation-delay:.4s}
+.team-card:nth-child(5){animation-delay:.5s}
+
+.team-card .avatar {
+  width:90px; height:90px; border-radius:50%; margin:0 auto 12px;
+  overflow:hidden;
+  border:3px solid #fbbf24;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);
+  background:linear-gradient(135deg,#2563eb,#f59e0b);
+}
+.team-card .avatar img {
+  width:100%; height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .4s ease;
+}
+.team-card:hover .avatar img { transform:scale(1.1); }
+
+.team-card h3 { font-size:18px; margin-bottom:6px; }
+.team-card .role { color:#fbbf24; font-size:14px; margin-bottom:4px; }
+.team-card .id { font-size:12px; opacity:.7; }
+
+@keyframes pop { 0%{transform:scale(.5);opacity:0} 100%{transform:scale(1);opacity:1} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== NAVBAR ===== */
+nav {
+  background:white; padding:14px 30px; display:flex; justify-content:space-between;
+  align-items:center; box-shadow:0 2px 10px rgba(0,0,0,.06); position:sticky;
+  top:0; z-index:100;
+}
+.logo-nav { font-size:24px; font-weight:900; color:var(--primary); letter-spacing:1px; cursor:pointer; }
+.logo-nav span { color:var(--accent); }
+.nav-links { display:flex; gap:25px; align-items:center; }
+.nav-links a { font-size:15px; font-weight:500; color:var(--dark); transition:.2s; cursor:pointer; }
+.nav-links a:hover { color:var(--primary); }
+.btn {
+  padding:10px 22px; border-radius:8px; font-weight:600; font-size:14px;
+  transition:.25s; display:inline-flex; align-items:center; gap:6px;
+}
+.btn-primary { background:var(--primary); color:white; }
+.btn-primary:hover { background:var(--primary-dark); transform:translateY(-2px); box-shadow:0 6px 14px rgba(37,99,235,.3); }
+.btn-accent { background:var(--accent); color:white; }
+.btn-accent:hover { background:#d97706; transform:translateY(-2px); }
+.btn-outline { background:transparent; border:2px solid var(--primary); color:var(--primary); }
+.btn-outline:hover { background:var(--primary); color:white; }
+.btn-danger { background:var(--danger); color:white; }
+.btn-danger:hover { background:#dc2626; transform:translateY(-1px); }
+.btn-success { background:var(--success); color:white; }
+.hamburger { display:none; font-size:26px; cursor:pointer; }
+
+/* ===== MAIN CONTAINER ===== */
+.container { max-width:1200px; margin:0 auto; padding:0 20px; }
+.section { padding:60px 0; }
+.section-title { text-align:center; font-size:32px; margin-bottom:12px; color:var(--dark); }
+.section-sub { text-align:center; color:var(--gray); margin-bottom:40px; font-size:16px; }
+
+/* ===== HERO ===== */
+.hero {
+  background:linear-gradient(135deg,#2563eb,#1e40af);
+  color:white; padding:80px 20px; text-align:center; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-50%; right:-20%; width:500px; height:500px;
+  background:radial-gradient(circle,rgba(245,158,11,.3),transparent 70%); border-radius:50%;
+}
+.hero h1 { font-size:48px; margin-bottom:16px; position:relative; }
+.hero p { font-size:18px; opacity:.95; margin-bottom:36px; max-width:650px; margin-left:auto; margin-right:auto; position:relative; }
+.search-box {
+  background:white; padding:14px; border-radius:14px; display:flex; gap:10px;
+  max-width:750px; margin:0 auto; box-shadow:0 12px 30px rgba(0,0,0,.2); position:relative;
+  flex-wrap:wrap;
+}
+.search-box select, .search-box input {
+  flex:1; min-width:150px; padding:12px 14px; border:1px solid #e2e8f0;
+  border-radius:8px; font-size:15px; outline:none;
+}
+.search-box select:focus, .search-box input:focus { border-color:var(--primary); }
+
+/* ===== CATEGORIES ===== */
+.cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:20px; }
+.cat-card {
+  background:white; padding:24px 16px; border-radius:14px; text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.05); cursor:pointer; transition:.3s;
+  border:2px solid transparent;
+}
+.cat-card:hover { transform:translateY(-6px); border-color:var(--primary); box-shadow:0 10px 24px rgba(37,99,235,.15); }
+.cat-icon { font-size:38px; margin-bottom:10px; }
+.cat-card p { font-weight:600; color:var(--dark); font-size:15px; }
+
+/* ===== WORKER CARDS ===== */
+.worker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:24px; }
+.worker-card {
+  background:white; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.06);
+  transition:.3s; position:relative;
+}
+.worker-card:hover { transform:translateY(-5px); box-shadow:0 12px 28px rgba(0,0,0,.12); }
+
+.worker-img {
+  height:200px; background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.worker-img img {
+  width:100%; height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .4s ease;
+}
+.worker-card:hover .worker-img img { transform:scale(1.08); }
+
+.verified-badge {
+  position:absolute; top:12px; right:12px; background:var(--success); color:white;
+  padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;
+  z-index:2;
+}
+.worker-body { padding:18px; }
+.worker-name { font-size:18px; font-weight:700; margin-bottom:6px; }
+.worker-meta { display:flex; gap:12px; font-size:13px; color:var(--gray); margin-bottom:12px; }
+.worker-rating { color:var(--accent); font-weight:600; }
+.skills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.skill-tag {
+  background:var(--light); color:var(--dark); padding:4px 10px; border-radius:20px;
+  font-size:12px; font-weight:500;
+}
+.worker-footer { display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #e2e8f0; }
+.price { font-weight:700; color:var(--primary); font-size:16px; }
+
+/* ===== HOW IT WORKS ===== */
+.steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:24px; }
+.step {
+  background:white; padding:30px; border-radius:16px; text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.05); position:relative;
+}
+.step-num {
+  width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:white; display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:800; margin:0 auto 16px;
+}
+.step h3 { font-size:18px; margin-bottom:8px; }
+.step p { color:var(--gray); font-size:14px; line-height:1.6; }
+
+/* ===== WHY CHOOSE ===== */
+.why-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; }
+.why-card {
+  background:white; padding:24px; border-radius:14px; text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.05); transition:.3s;
+}
+.why-card:hover { transform:translateY(-4px); }
+.why-icon { font-size:36px; margin-bottom:12px; }
+.why-card h4 { font-size:16px; margin-bottom:6px; }
+.why-card p { font-size:13px; color:var(--gray); }
+
+/* ===== FORMS ===== */
+.form-container {
+  max-width:520px; margin:0 auto; background:white; padding:36px;
+  border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08);
+}
+.form-group { margin-bottom:18px; }
+.form-group label { display:block; font-weight:600; margin-bottom:6px; font-size:14px; }
+.form-group input, .form-group select, .form-group textarea {
+  width:100%; padding:11px 14px; border:1px solid #e2e8f0; border-radius:8px;
+  font-size:14px; outline:none; font-family:inherit; transition:.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tab-switch { display:flex; margin-bottom:24px; background:var(--light); border-radius:10px; padding:4px; }
+.tab-switch button {
+  flex:1; padding:10px; border-radius:8px; background:transparent;
+  font-weight:600; font-size:14px; color:var(--gray); transition:.2s;
+}
+.tab-switch button.active { background:white; color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+
+/* File input styling */
+.form-group input[type="file"] {
+  padding:8px; border:2px dashed #cbd5e1; border-radius:8px; 
+  background:var(--light); cursor:pointer;
+}
+.form-group input[type="file"]:hover { border-color:var(--primary); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(15,23,42,.6); display:none;
+  align-items:center; justify-content:center; z-index:1000; padding:20px;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.show { display:flex; animation:fadeIn .3s; }
+.modal {
+  background:white; border-radius:16px; max-width:520px; width:100%;
+  max-height:90vh; overflow-y:auto; padding:30px; animation:slideUp .4s;
+}
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.modal-header h2 { font-size:22px; }
+.close-btn { background:none; font-size:24px; color:var(--gray); }
+
+/* ===== DASHBOARD ===== */
+.dashboard { display:grid; grid-template-columns:240px 1fr; gap:24px; padding:30px 20px; max-width:1200px; margin:0 auto; }
+.sidebar {
+  background:white; border-radius:14px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,.06);
+  height:fit-content; position:sticky; top:90px;
+}
+.sidebar h3 { font-size:16px; color:var(--gray); margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; }
+.sidebar-item {
+  display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:8px;
+  cursor:pointer; font-size:14px; font-weight:500; margin-bottom:4px; transition:.2s;
+}
+.sidebar-item:hover { background:var(--light); color:var(--primary); }
+.sidebar-item.active { background:var(--primary); color:white; }
+.dash-content { background:white; border-radius:14px; padding:28px; box-shadow:0 4px 14px rgba(0,0,0,.06); }
+.dash-content h2 { margin-bottom:20px; font-size:24px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:28px; }
+.stat-card {
+  background:linear-gradient(135deg,#f8fafc,#e2e8f0); padding:20px; border-radius:12px;
+  border-left:4px solid var(--primary);
+}
+.stat-card h4 { font-size:13px; color:var(--gray); margin-bottom:8px; text-transform:uppercase; }
+.stat-card .num { font-size:28px; font-weight:800; color:var(--primary); }
+
+/* ===== REQUEST CARDS ===== */
+.request-card {
+  background:var(--light); padding:16px; border-radius:10px; margin-bottom:12px;
+  border-left:4px solid var(--accent);
+}
+.request-card h4 { font-size:15px; margin-bottom:6px; }
+.request-card p { font-size:13px; color:var(--gray); margin-bottom:4px; }
+.status {
+  display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px;
+  font-weight:600; text-transform:uppercase;
+}
+.status.pending { background:#fef3c7; color:#92400e; }
+.status.accepted { background:#d1fae5; color:#065f46; }
+.status.completed { background:#dbeafe; color:#1e40af; }
+.status.rejected { background:#fee2e2; color:#991b1b; }
+
+/* NID Badge */
+.nid-badge {
+  display: inline-flex; align-items: center; gap:4px;
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
+}
+.nid-badge.pending { background:#fef3c7; color:#92400e; }
+.nid-badge.approved { background:#d1fae5; color:#065f46; }
+.nid-badge.rejected { background:#fee2e2; color:#991b1b; }
+
+/* ===== REVIEWS ===== */
+.review-card {
+  background:var(--light); padding:16px; border-radius:10px; margin-bottom:12px;
+}
+.review-card .stars { color:var(--accent); margin-bottom:6px; }
+.review-card p { font-size:14px; margin-bottom:6px; }
+.review-card .author { font-size:12px; color:var(--gray); }
+
+/* ===== FOOTER ===== */
+footer { background:var(--dark); color:#cbd5e1; padding:50px 20px 20px; margin-top:60px; }
+.footer-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:30px; }
+.footer-col h4 { color:white; margin-bottom:14px; font-size:16px; }
+.footer-col a, .footer-col p { display:block; color:#cbd5e1; font-size:14px; margin-bottom:8px; cursor:pointer; transition:.2s; }
+.footer-col a:hover { color:var(--accent); }
+.footer-bottom { max-width:1200px; margin:30px auto 0; padding-top:20px; border-top:1px solid #334155; text-align:center; font-size:13px; }
+
+/* ===== PAGE VIEWS ===== */
+.page { display:none; }
+.page.active { display:block; animation:fadeIn .4s; }
+
+/* ===== TOAST ===== */
+.toast {
+  position:fixed; bottom:30px; right:30px; background:var(--dark); color:white;
+  padding:14px 22px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.2);
+  z-index:2000; transform:translateY(100px); opacity:0; transition:.3s;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:var(--success); }
+.toast.error { background:var(--danger); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:768px) {
+  .nav-links { display:none; position:absolute; top:60px; left:0; right:0; background:white;
+    flex-direction:column; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,.1); }
+  .nav-links.show { display:flex; }
+  .hamburger { display:block; }
+  .hero h1 { font-size:32px; }
+  .hero p { font-size:16px; }
+  .dashboard { grid-template-columns:1fr; }
+  .sidebar { position:static; }
+  .form-row { grid-template-columns:1fr; }
+  .search-box { flex-direction:column; }
+  #splash .logo { font-size:44px; }
+  .team-grid { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash">
+  <div class="logo">FIXMATE</div>
+  <div class="tagline">Online Worker Finder</div>
+  <div class="subtitle">"Find Trusted Workers Near You"</div>
+  <div class="info-box">
+    <p><strong>Project Name:</strong> FixMate</p>
+    <p><strong>Project Type:</strong> Online Worker Finding Platform</p>
+    <p><strong>Institution:</strong> [Feni Computer Institute]</p>
+    <p><strong>Department:</strong> Computer Science & Technology</p>
+    <p><strong>Session:</strong> [2022-2023]</p>
+  </div>
+</div>
+
+<!-- ===== TEAM SCREEN ===== -->
+<div id="team">
+  <h2>👥 Our Team</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="avatar"><img src="images/arafat.jpg" alt="Arafat"></div>
+      <h3>Arafat Hossain</h3>
+      <div class="role">Developer</div>
+      <div class="id">ID: 784081</div>
+    </div>
+    <div class="team-card">
+      <div class="avatar"><img src="images/mridul.jpg" alt="Mridul"></div>
+      <h3>Mridul Paul</h3>
+      <div class="role">Designer</div>
+      <div class="id">ID: 784052</div>
+    </div>
+    <div class="team-card">
+      <div class="avatar"><img src="images/tanvir.jpg" alt="Tanvir"></div>
+      <h3>Tanvir Hossain</h3>
+      <div class="role">Developer</div>
+      <div class="id">ID: 784068</div>
+    </div>
+    <div class="team-card">
+      <div class="avatar"><img src="images/shiblu.jpg" alt="Shiblu"></div>
+      <h3>Abdullah Hill Mahmud</h3>
+      <div class="role">Documentation</div>
+      <div class="id">ID: 784069</div>
+    </div>
+    <div class="team-card">
+      <div class="avatar"><img src="images/junayed.jpg" alt="junayed"></div>
+      <h3>Md.Junayed</h3>
+      <div class="role">Documentation</div>
+      <div class="id">ID: 784058</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<nav id="mainNav" style="display:none;">
+  <div class="logo-nav" onclick="showPage('home')">FIX<span>MATE</span></div>
+  <div class="hamburger" onclick="toggleMenu()">☰</div>
+  <div class="nav-links" id="navLinks">
+    <a onclick="showPage('home')">Home</a>
+    <a onclick="showPage('find')">Find Worker</a>
+    <a onclick="showPage('categories')">Categories</a>
+    <a onclick="showPage('how')">How It Works</a>
+    <a onclick="showPage('about')">About</a>
+    <a onclick="showPage('contact')">Contact</a>
+    <button class="btn btn-outline" id="loginBtn" onclick="openAuth()">Login / Register</button>
+    <button class="btn btn-primary" id="dashBtn" style="display:none;" onclick="goDashboard()">Dashboard</button>
+    <button class="btn btn-danger" id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- ===== HOME PAGE ===== -->
+<div class="page" id="page-home">
+  <div class="hero">
+    <h1>Find the Right Worker for Your Job</h1>
+    <p>Electrician, Plumber, Carpenter, Mason and more — find trusted workers easily.</p>
+    <div class="search-box">
+      <select id="heroCategory">
+        <option value="">Select Category</option>
+        <option>Electrician</option><option>Plumber</option><option>Mason</option>
+        <option>Carpenter</option><option>Painter</option><option>AC Technician</option>
+        <option>Mechanic</option><option>Cleaner</option><option>Computer Technician</option>
+      </select>
+      <select id="heroLocation">
+        <option value="">Select Location</option>
+        <option>Feni</option><option>Dhaka</option><option>Chittagong</option>
+        <option>Comilla</option><option>Sylhet</option><option>Rajshahi</option>
+      </select>
+      <button class="btn btn-accent" onclick="heroSearch()">🔍 Find Worker</button>
+    </div>
+  </div>
+
+  <div class="container section">
+    <h2 class="section-title">Find Workers by Category</h2>
+    <p class="section-sub">Choose the service you need</p>
+    <div class="cat-grid" id="homeCats"></div>
+  </div>
+
+  <div class="container section" style="padding-top:0;">
+    <h2 class="section-title">⭐ Featured & Verified Workers</h2>
+    <p class="section-sub">Top rated professionals near you</p>
+    <div class="worker-grid" id="featuredWorkers"></div>
+  </div>
+
+  <div class="container section">
+    <h2 class="section-title">📖 How FixMate Works</h2>
+    <p class="section-sub">Get service in 3 easy steps</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><h3>Search</h3><p>Find the worker you need by category and location.</p></div>
+      <div class="step"><div class="step-num">02</div><h3>Request</h3><p>Send a service request with your job details.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Get Service</h3><p>The worker completes your job professionally.</p></div>
+    </div>
+  </div>
+
+  <div class="container section" style="padding-top:0;">
+    <h2 class="section-title">🛡️ Why Choose FixMate?</h2>
+    <p class="section-sub">Trusted by thousands of customers</p>
+    <div class="why-grid">
+      <div class="why-card"><div class="why-icon">✅</div><h4>Verified Workers</h4><p>All workers are ID verified</p></div>
+      <div class="why-card"><div class="why-icon">🔒</div><h4>Safe & Secure</h4><p>Your data is protected</p></div>
+      <div class="why-card"><div class="why-icon">⭐</div><h4>Customer Reviews</h4><p>Real ratings from real users</p></div>
+      <div class="why-card"><div class="why-icon">📍</div><h4>Location Based</h4><p>Find workers near you</p></div>
+      <div class="why-card"><div class="why-icon">⚡</div><h4>Quick Service</h4><p>Fast response time</p></div>
+      <div class="why-card"><div class="why-icon">💰</div><h4>Affordable Price</h4><p>Best rates guaranteed</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FIND WORKER PAGE ===== -->
+<div class="page" id="page-find">
+  <div class="container section">
+    <h2 class="section-title">🔍 Find a Worker</h2>
+    <p class="section-sub">Filter by your needs</p>
+    <div class="form-container" style="max-width:900px; margin-bottom:30px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="filterCategory">
+            <option value="">All Categories</option>
+            <option>Electrician</option><option>Plumber</option><option>Mason</option>
+            <option>Carpenter</option><option>Painter</option><option>AC Technician</option>
+            <option>Mechanic</option><option>Cleaner</option><option>Computer Technician</option>
+            <option>Network Engineer</option><option>Computer Operator</option><option>Web Developer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <select id="filterLocation">
+            <option value="">All Locations</option>
+            <option>Feni</option><option>Dhaka</option><option>Chittagong</option>
+            <option>Comilla</option><option>Sylhet</option><option>Rajshahi</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Min Rating</label>
+          <select id="filterRating">
+            <option value="0">Any Rating</option>
+            <option value="4">4★ & above</option>
+            <option value="4.5">4.5★ & above</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Verified Only</label>
+          <select id="filterVerified">
+            <option value="no">All Workers</option>
+            <option value="yes">Verified Only</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="applyFilter()">Apply Filters</button>
+    </div>
+    <div class="worker-grid" id="filteredWorkers"></div>
+  </div>
+</div>
+
+<!-- ===== CATEGORIES PAGE ===== -->
+<div class="page" id="page-categories">
+  <div class="container section">
+    <h2 class="section-title">👷 Worker Categories</h2>
+    <p class="section-sub">Browse all available services</p>
+    <div class="cat-grid" id="allCats"></div>
+  </div>
+</div>
+
+<!-- ===== HOW IT WORKS PAGE ===== -->
+<div class="page" id="page-how">
+  <div class="container section">
+    <h2 class="section-title">📖 How FixMate Works</h2>
+    <p class="section-sub">Get your job done in 3 simple steps</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><h3>Search</h3><p>আপনার প্রয়োজনীয় worker খুঁজুন category এবং location অনুযায়ী।</p></div>
+      <div class="step"><div class="step-num">02</div><h3>Request</h3><p>Worker-কে service request পাঠান কাজের বিস্তারিত সহ।</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Get Service</h3><p>Worker আপনার কাজ সম্পন্ন করবে professionally।</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ABOUT PAGE ===== -->
+<div class="page" id="page-about">
+  <div class="container section">
+    <h2 class="section-title">About FixMate</h2>
+    <p class="section-sub">Online Worker Finding Platform</p>
+    <div class="form-container" style="max-width:800px;">
+      <p style="line-height:1.8; font-size:15px; color:#475569;">
+        <strong>FixMate</strong> একটি অনলাইন প্ল্যাটফর্ম যা ব্যবহারকারীদের তাদের প্রয়োজনীয়
+        worker (electrician, plumber, carpenter, mason ইত্যাদি) খুঁজে পেতে সাহায্য করে।
+        আমাদের লক্ষ্য হলো trusted এবং verified workers-দের সাথে customers-দের সংযোগ করানো,
+        যাতে তারা সহজেই ঘরের কাজের সমাধান পায়।
+      </p>
+      <div style="margin-top:24px; padding:16px; background:var(--light); border-radius:10px;">
+        <p><strong>Project:</strong> FixMate - Online Worker Finder</p>
+        <p><strong>Department:</strong> Computer Science & Technology</p>
+        <p><strong>Type:</strong> Academic Project</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONTACT PAGE ===== -->
+<div class="page" id="page-contact">
+  <div class="container section">
+    <h2 class="section-title">📞 Contact Us</h2>
+    <p class="section-sub">We're here to help</p>
+    <div class="why-grid" style="max-width:900px; margin:0 auto;">
+      <div class="why-card"><div class="why-icon">📱</div><h4>Phone</h4><p>+880 1XXX-XXXXXX</p></div>
+      <div class="why-card"><div class="why-icon">✉️</div><h4>Email</h4><p>support@fixmate.com</p></div>
+      <div class="why-card"><div class="why-icon">📘</div><h4>Facebook</h4><p>facebook.com/fixmate</p></div>
+      <div class="why-card"><div class="why-icon">💬</div><h4>Support</h4><p>24/7 Live Chat</p></div>
+    </div>
+    <div class="form-container" style="margin-top:30px;">
+      <h3 style="margin-bottom:16px;">Send us a message</h3>
+      <div class="form-group"><label>Your Name</label><input type="text" placeholder="Enter name"></div>
+      <div class="form-group"><label>Email</label><input type="email" placeholder="Enter email"></div>
+      <div class="form-group"><label>Message</label><textarea rows="4" placeholder="Your message..."></textarea></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="toast('Message sent successfully!','success')">Send Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WORKER PROFILE PAGE ===== -->
+<div class="page" id="page-profile">
+  <div class="container section" id="profileContent"></div>
+</div>
+
+<!-- ===== CUSTOMER DASHBOARD ===== -->
+<div class="page" id="page-customerDash">
+  <div class="dashboard">
+    <div class="sidebar">
+      <h3>Customer Menu</h3>
+      <div class="sidebar-item active" onclick="custTab('overview',this)">📊 Overview</div>
+      <div class="sidebar-item" onclick="custTab('find',this)">🔍 Find Worker</div>
+      <div class="sidebar-item" onclick="custTab('requests',this)">📋 My Requests</div>
+      <div class="sidebar-item" onclick="custTab('active',this)">⚡ Active Jobs</div>
+      <div class="sidebar-item" onclick="custTab('completed',this)">✅ Completed</div>
+      <div class="sidebar-item" onclick="custTab('favorites',this)">❤️ Favourites</div>
+      <div class="sidebar-item" onclick="custTab('reviews',this)">⭐ My Reviews</div>
+      <div class="sidebar-item" onclick="custTab('profile',this)">👤 Profile</div>
+      <div class="sidebar-item" onclick="custTab('settings',this)">⚙️ Settings</div>
+      <div class="sidebar-item" onclick="logout()">🚪 Logout</div>
+    </div>
+    <div class="dash-content" id="custContent"></div>
+  </div>
+</div>
+
+<!-- ===== WORKER DASHBOARD ===== -->
+<div class="page" id="page-workerDash">
+  <div class="dashboard">
+    <div class="sidebar">
+      <h3>Worker Menu</h3>
+      <div class="sidebar-item active" onclick="workTab('overview',this)">📊 Dashboard</div>
+      <div class="sidebar-item" onclick="workTab('profile',this)">👤 My Profile</div>
+      <div class="sidebar-item" onclick="workTab('requests',this)">📥 Service Requests</div>
+      <div class="sidebar-item" onclick="workTab('accepted',this)">✅ Accepted Jobs</div>
+      <div class="sidebar-item" onclick="workTab('completed',this)">🎯 Completed Jobs</div>
+      <div class="sidebar-item" onclick="workTab('reviews',this)">⭐ Reviews</div>
+      <div class="sidebar-item" onclick="workTab('earnings',this)">💰 Earnings</div>
+      <div class="sidebar-item" onclick="workTab('availability',this)">🟢 Availability</div>
+      <div class="sidebar-item" onclick="workTab('settings',this)">⚙️ Settings</div>
+      <div class="sidebar-item" onclick="logout()">🚪 Logout</div>
+    </div>
+    <div class="dash-content" id="workContent"></div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div class="page" id="page-admin">
+  <div class="dashboard">
+    <div class="sidebar">
+      <h3>Admin Menu</h3>
+      <div class="sidebar-item active" onclick="adminTab('overview',this)">📊 Dashboard</div>
+      <div class="sidebar-item" onclick="adminTab('workers',this)">👷 Manage Workers</div>
+      <div class="sidebar-item" onclick="adminTab('verify',this)">✅ Verify Users</div>
+      <div class="sidebar-item" onclick="adminTab('customers',this)">👥 Manage Customers</div>
+      <div class="sidebar-item" onclick="adminTab('categories',this)">📂 Categories</div>
+      <div class="sidebar-item" onclick="adminTab('requests',this)">📋 Service Requests</div>
+      <div class="sidebar-item" onclick="adminTab('reviews',this)">⭐ Reviews</div>
+      <div class="sidebar-item" onclick="adminTab('reports',this)">🚨 Reports</div>
+      <div class="sidebar-item" onclick="adminTab('complaints',this)">⚠️ Complaints</div>
+      <div class="sidebar-item" onclick="adminTab('settings',this)">⚙️ Website Settings</div>
+      <div class="sidebar-item" onclick="logout()">🚪 Logout</div>
+    </div>
+    <div class="dash-content" id="adminContent"></div>
+  </div>
+</div>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Welcome to FixMate</h2>
+      <button class="close-btn" onclick="closeAuth()">✕</button>
+    </div>
+    <div class="tab-switch">
+      <button class="active" onclick="switchAuth('login',this)">Login</button>
+      <button onclick="switchAuth('register',this)">Register</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Login As</label>
+        <select id="loginRole">
+          <option value="customer">Customer</option>
+          <option value="worker">Worker</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Email / Phone</label><input type="text" id="loginEmail" placeholder="Enter email or phone"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="Enter password"></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Login</button>
+      <p style="text-align:center; margin-top:12px; font-size:12px; color:var(--gray);">
+        Demo: admin@fixmate.com / admin123 (Admin)
+      </p>
+    </div>
+
+    <div id="registerForm" style="display:none;">
+      <div class="tab-switch" style="margin-bottom:16px;">
+        <button class="active" onclick="switchReg('customer',this)">Customer</button>
+        <button onclick="switchReg('worker',this)">Worker</button>
+      </div>
+
+      <!-- CUSTOMER REGISTRATION -->
+      <div id="regCustomer">
+        <div class="form-group"><label>Full Name *</label><input type="text" id="rcName" placeholder="Your name"></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="rcEmail" placeholder="email@example.com"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="rcPhone" placeholder="01XXXXXXXXX"></div>
+        <div class="form-group"><label>Password *</label><input type="password" id="rcPass" placeholder="Create password"></div>
+        <div class="form-group"><label>Location</label>
+          <select id="rcLocation"><option>Feni</option><option>Dhaka</option><option>Chittagong</option><option>Comilla</option><option>Sylhet</option></select>
+        </div>
+
+        <div class="form-group">
+          <label>NID Number * <small style="color:var(--gray);font-weight:400;">(10-17 digits)</small></label>
+          <input type="text" id="rcNid" placeholder="Enter your NID number" maxlength="17">
+        </div>
+
+        <div class="form-group">
+          <label>Profile Photo <small style="color:var(--gray);font-weight:400;">(optional)</small></label>
+          <input type="file" id="rcPhoto" accept="image/*" onchange="previewImage(this,'rcPhotoPreview')">
+          <div id="rcPhotoPreview" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="form-group">
+          <label>NID Photo (Front Side) *</label>
+          <input type="file" id="rcNidPhoto" accept="image/*" onchange="previewImage(this,'rcNidPreview')">
+          <div id="rcNidPreview" style="margin-top:10px;"></div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;" onclick="registerCustomer()">Register as Customer</button>
+      </div>
+
+      <!-- WORKER REGISTRATION -->
+      <div id="regWorker" style="display:none;">
+        <div class="form-group"><label>Full Name *</label><input type="text" id="rwName" placeholder="Your name"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="rwPhone" placeholder="01XXXXXXXXX"></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="rwEmail" placeholder="email@example.com"></div>
+        <div class="form-group"><label>Password *</label><input type="password" id="rwPass" placeholder="Create password"></div>
+        <div class="form-group"><label>Profession</label>
+          <select id="rwProfession">
+            <option>Electrician</option><option>Plumber</option><option>Mason</option>
+            <option>Carpenter</option><option>Painter</option><option>AC Technician</option>
+            <option>Mechanic</option><option>Cleaner</option><option>Computer Technician</option>
+            <option>Network Engineer</option><option>Computer Operator</option><option>Web Developer</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Experience (years)</label><input type="number" id="rwExp" placeholder="e.g. 5"></div>
+        <div class="form-group"><label>Location</label>
+          <select id="rwLocation"><option>Feni</option><option>Dhaka</option><option>Chittagong</option><option>Comilla</option><option>Sylhet</option></select>
+        </div>
+        <div class="form-group"><label>Skills (comma separated)</label><input type="text" id="rwSkills" placeholder="House Wiring, Fan Installation"></div>
+
+        <div class="form-group">
+          <label>NID Number * <small style="color:var(--gray);font-weight:400;">(10-17 digits)</small></label>
+          <input type="text" id="rwNid" placeholder="Enter your NID number" maxlength="17">
+        </div>
+
+        <div class="form-group">
+          <label>Profile Photo *</label>
+          <input type="file" id="rwPhoto" accept="image/*" onchange="previewImage(this,'rwPhotoPreview')">
+          <div id="rwPhotoPreview" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="form-group">
+          <label>NID Photo (Front Side) *</label>
+          <input type="file" id="rwNidPhoto" accept="image/*" onchange="previewImage(this,'rwNidPreview')">
+          <div id="rwNidPreview" style="margin-top:10px;"></div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;" onclick="registerWorker()">Register as Worker</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SERVICE REQUEST MODAL ===== -->
+<div class="modal-overlay" id="requestModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📝 Service Request</h2>
+      <button class="close-btn" onclick="closeRequest()">✕</button>
+    </div>
+    <div class="form-group"><label>Service Type</label><input type="text" id="reqType" readonly></div>
+    <div class="form-group"><label>Problem Description</label><textarea id="reqDesc" rows="3" placeholder="Describe your problem..."></textarea></div>
+    <div class="form-group"><label>Address / Location</label><input type="text" id="reqAddress" placeholder="Your full address"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Preferred Date</label><input type="date" id="reqDate"></div>
+      <div class="form-group"><label>Preferred Time</label><input type="time" id="reqTime"></div>
+    </div>
+    <div class="form-group"><label>Estimated Budget (৳)</label><input type="number" id="reqBudget" placeholder="e.g. 500"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="submitRequest()">Send Service Request</button>
+  </div>
+</div>
+
+<!-- ===== REVIEW MODAL ===== -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⭐ Write a Review</h2>
+      <button class="close-btn" onclick="closeReview()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Rating</label>
+      <div id="starPicker" style="font-size:32px; cursor:pointer; color:#cbd5e1;">
+        <span onclick="setStar(1)">★</span><span onclick="setStar(2)">★</span>
+        <span onclick="setStar(3)">★</span><span onclick="setStar(4)">★</span>
+        <span onclick="setStar(5)">★</span>
+      </div>
+    </div>
+    <div class="form-group"><label>Review</label><textarea id="reviewText" rows="3" placeholder="Write your experience..."></textarea></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="submitReview()">Submit Review</button>
+  </div>
+</div>
+
+<!-- ===== DELETE CONFIRM MODAL ===== -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:420px; text-align:center;">
+    <div style="font-size:64px; margin-bottom:10px;">⚠️</div>
+    <h2 style="margin-bottom:10px; font-size:22px;">Are you sure?</h2>
+    <p id="deleteMsg" style="color:var(--gray); margin-bottom:24px; font-size:14px;">
+      Do you want to delete this worker?
+    </p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="confirmDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA LAYER
+============================================================ */
+const DEFAULT_WORKERS = [
+  {id:1, name:'Rahim Electrician', profession:'Electrician', rating:4.8, location:'Feni', verified:true, experience:8, price:500, 
+   photo:'images/rahim.jpg',
+   skills:['House Wiring','Fan Installation','Switch Repair'], phone:'01711111111', available:true, jobs:120, 
+   reviews:[{stars:5,text:'Excellent work!',author:'Karim'},{stars:5,text:'Very professional',author:'Salam'}]},
+  
+  {id:2, name:'Karim Plumber', profession:'Plumber', rating:4.6, location:'Dhaka', verified:true, experience:6, price:400, 
+   photo:'images/karim.avif',
+   skills:['Pipe Fitting','Leak Repair','Bathroom Setup'], phone:'01722222222', available:true, jobs:95, 
+   reviews:[{stars:4,text:'Good service',author:'Rahul'}]},
+  
+  {id:3, name:'Jamal Carpenter', profession:'Carpenter', rating:4.9, location:'Chittagong', verified:true, experience:12, price:700, 
+   photo:'images/jamal.jpg',
+   skills:['Furniture','Door Repair','Wood Polish'], phone:'01733333333', available:false, jobs:200, 
+   reviews:[{stars:5,text:'Best carpenter!',author:'Nadia'}]},
+  
+  {id:4, name:'Salam Mason', profession:'Mason', rating:4.5, location:'Comilla', verified:false, experience:5, price:600, 
+   photo:'images/salam.jpg',
+   skills:['Brick Work','Plastering','Tiles'], phone:'01744444444', available:true, jobs:70, reviews:[]},
+  
+  {id:5, name:'Hasan Painter', profession:'Painter', rating:4.7, location:'Feni', verified:true, experience:7, price:550, 
+   photo:'images/hasan.jpg',
+   skills:['Wall Painting','Texture','Waterproofing'], phone:'01755555555', available:true, jobs:110, 
+   reviews:[{stars:5,text:'Nice work',author:'Ayesha'}]},
+  
+  {id:6, name:'Rakib AC Tech', profession:'AC Technician', rating:4.8, location:'Dhaka', verified:true, experience:9, price:800, 
+   photo:'images/rakib.jpg',
+   skills:['AC Servicing','Gas Refill','Installation'], phone:'01766666666', available:true, jobs:150, reviews:[]},
+  
+  {id:7, name:'Nabil Mechanic', profession:'Mechanic', rating:4.4, location:'Sylhet', verified:false, experience:4, price:450, 
+   photo:'images/nabil.jpg',
+   skills:['Engine Repair','Oil Change','Bike Service'], phone:'01777777777', available:true, jobs:60, reviews:[]},
+  
+  {id:8, name:'Sijuka Cleaner', profession:'Cleaner', rating:4.9, location:'Dhaka', verified:true, experience:6, price:350, 
+   photo:'images/sijuka.jpg',
+   skills:['Home Cleaning','Office Cleaning','Deep Clean'], phone:'01788888888', available:true, jobs:180, 
+   reviews:[{stars:5,text:'Very clean!',author:'Tania'}]},
+  
+  {id:9, name:'Farhan Computer Tech', profession:'Computer Technician', rating:4.6, location:'Feni', verified:true, experience:5, price:400, 
+   photo:'images/farhan.jpg',
+   skills:['Laptop Repair','OS Install','Hardware'], phone:'01799999999', available:true, jobs:85, reviews:[]},
+  
+  {id:10, name:'Mizan Electrician', profession:'Electrician', rating:4.3, location:'Chittagong', verified:false, experience:3, price:400, 
+   photo:'images/mizan.jpg',
+   skills:['Wiring','Light Setup'], phone:'01710101010', available:true, jobs:40, reviews:[]}
+];
+
+const CATEGORIES = [
+  {icon:'⚡', name:'Electrician'},{icon:'🔧', name:'Plumber'},
+  {icon:'🧱', name:'Mason'},{icon:'🪚', name:'Carpenter'},
+  {icon:'🎨', name:'Painter'},{icon:'❄️', name:'AC Technician'},
+  {icon:'🔩', name:'Mechanic'},{icon:'🧹', name:'Cleaner'},
+  {icon:'💻', name:'Computer Technician'},{icon:'➕', name:'Other Workers'}
+];
+
+const DB = {
+  get(key, def) { try { return JSON.parse(localStorage.getItem('fixmate_'+key)) || def; } catch(e){ return def; } },
+  set(key, val) { localStorage.setItem('fixmate_'+key, JSON.stringify(val)); }
+};
+
+if (!DB.get('workers')) DB.set('workers', DEFAULT_WORKERS);
+if (!DB.get('customers')) DB.set('customers', []);
+if (!DB.get('requests')) DB.set('requests', []);
+if (!DB.get('session')) DB.set('session', null);
+
+/* ============================================================
+   SPLASH + TEAM FLOW
+============================================================ */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      document.getElementById('team').style.display = 'flex';
+      setTimeout(() => {
+        document.getElementById('team').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('team').style.display = 'none';
+          document.getElementById('mainNav').style.display = 'flex';
+          initApp();
+        }, 600);
+      }, 4500);
+    }, 600);
+  }, 3500);
+});
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-'+id);
+  if (page) page.classList.add('active');
+  document.getElementById('navLinks').classList.remove('show');
+  window.scrollTo(0,0);
+}
+
+function toggleMenu() { document.getElementById('navLinks').classList.toggle('show'); }
+
+function initApp() {
+  renderCategories();
+  renderFeatured();
+  showPage('home');
+  checkSession();
+}
+
+/* ============================================================
+   IMAGE PREVIEW HELPERS (NEW)
+============================================================ */
+function previewImage(input, previewId) {
+  const container = document.getElementById(previewId);
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Image size should be less than 2MB', 'error');
+      input.value = '';
+      container.innerHTML = '';
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      container.innerHTML = `
+        <div style="position:relative; display:inline-block;">
+          <img src="${e.target.result}" 
+               style="width:120px; height:120px; object-fit:cover; 
+                      border-radius:10px; border:2px solid var(--primary);">
+          <button onclick="clearImage('${input.id}','${previewId}')" 
+                  style="position:absolute; top:-8px; right:-8px; 
+                         width:26px; height:26px; border-radius:50%; 
+                         background:var(--danger); color:white; font-size:16px;
+                         display:flex; align-items:center; justify-content:center;
+                         line-height:1;">×</button>
+        </div>
+      `;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function clearImage(inputId, previewId) {
+  document.getElementById(inputId).value = '';
+  document.getElementById(previewId).innerHTML = '';
+}
+
+function getImageData(inputId) {
+  return new Promise((resolve) => {
+    const input = document.getElementById(inputId);
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      resolve(null);
+    }
+  });
+}
+
+/* ============================================================
+   RENDER FUNCTIONS
+============================================================ */
+function renderCategories() {
+  const html = CATEGORIES.map(c => `
+    <div class="cat-card" onclick="filterByCategory('${c.name}')">
+      <div class="cat-icon">${c.icon}</div>
+      <p>${c.name}</p>
+    </div>`).join('');
+  document.getElementById('homeCats').innerHTML = html;
+  document.getElementById('allCats').innerHTML = html;
+}
+
+function workerCard(w) {
+  const img = w.photo || 'https://picsum.photos/400/300?random=' + w.id;
+  return `
+    <div class="worker-card">
+      <div class="worker-img">
+        <img src="${img}" alt="${w.name}"
+             onerror="this.onerror=null; this.src='https://picsum.photos/400/300?random=${w.id}'">
+        ${w.verified ? '<span class="verified-badge">✅ Verified</span>' : ''}
+      </div>
+      <div class="worker-body">
+        <div class="worker-name">${w.name}</div>
+        <div class="worker-meta">
+          <span class="worker-rating">⭐ ${w.rating}</span>
+          <span>📍 ${w.location}</span>
+          <span>${w.experience}y exp</span>
+        </div>
+        <div class="skills">${w.skills.slice(0,3).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+        <div class="worker-footer">
+          <span class="price">৳${w.price}</span>
+          <button class="btn btn-primary" style="padding:8px 16px; font-size:13px;" onclick="viewProfile(${w.id})">View Profile</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderFeatured() {
+  const workers = DB.get('workers', []);
+  const featured = workers.filter(w => w.verified && w.rating >= 4.5).slice(0,6);
+  document.getElementById('featuredWorkers').innerHTML = featured.map(workerCard).join('');
+  document.getElementById('filteredWorkers').innerHTML = workers.map(workerCard).join('');
+}
+
+/* ============================================================
+   SEARCH & FILTER
+============================================================ */
+function heroSearch() {
+  const cat = document.getElementById('heroCategory').value;
+  const loc = document.getElementById('heroLocation').value;
+  showPage('find');
+  setTimeout(() => {
+    document.getElementById('filterCategory').value = cat;
+    document.getElementById('filterLocation').value = loc;
+    applyFilter();
+  }, 100);
+}
+
+function filterByCategory(cat) {
+  showPage('find');
+  setTimeout(() => {
+    document.getElementById('filterCategory').value = cat;
+    applyFilter();
+  }, 100);
+}
+
+function applyFilter() {
+  const cat = document.getElementById('filterCategory').value;
+  const loc = document.getElementById('filterLocation').value;
+  const rating = parseFloat(document.getElementById('filterRating').value) || 0;
+  const verified = document.getElementById('filterVerified').value;
+
+  let workers = DB.get('workers', []);
+  if (cat) workers = workers.filter(w => w.profession === cat);
+  if (loc) workers = workers.filter(w => w.location === loc);
+  if (rating > 0) workers = workers.filter(w => w.rating >= rating);
+  if (verified === 'yes') workers = workers.filter(w => w.verified);
+
+  const container = document.getElementById('filteredWorkers');
+  container.innerHTML = workers.length
+    ? workers.map(workerCard).join('')
+    : '<p style="text-align:center; color:#64748b; grid-column:1/-1; padding:40px;">No workers found matching your filters.</p>';
+}
+
+/* ============================================================
+   WORKER PROFILE
+============================================================ */
+function viewProfile(id) {
+  const w = DB.get('workers', []).find(x => x.id === id);
+  if (!w) return;
+  const img = w.photo || 'https://picsum.photos/200/200?random=' + w.id;
+  const reviews = w.reviews && w.reviews.length
+    ? w.reviews.map(r => `<div class="review-card"><div class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div><p>${r.text}</p><div class="author">— ${r.author}</div></div>`).join('')
+    : '<p style="color:#64748b;">No reviews yet.</p>';
+
+  document.getElementById('profileContent').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px;">
+      <div class="form-container" style="text-align:center; max-width:100%;">
+        <img src="${img}" alt="${w.name}"
+             style="width:140px; height:140px; border-radius:50%; object-fit:cover; 
+                    border:4px solid var(--primary); margin-bottom:12px; box-shadow:0 8px 20px rgba(37,99,235,.3);"
+             onerror="this.onerror=null; this.src='https://picsum.photos/200/200?random=${w.id}'">
+        <h2 style="margin:12px 0 6px;">${w.name}</h2>
+        <p style="color:var(--primary); font-weight:600;">${w.profession}</p>
+        ${w.verified ? '<p style="color:var(--success); font-size:13px; margin-top:6px;">✅ Verified Worker</p>' : ''}
+        <div style="margin:14px 0; font-size:14px;">
+          <p>⭐ ${w.rating} Rating</p>
+          <p>📍 ${w.location}</p>
+          <p>💼 ${w.experience} years experience</p>
+          <p>🎯 ${w.jobs} jobs completed</p>
+          <p style="margin-top:8px;">${w.available ? '🟢 Available' : '🔴 Busy'}</p>
+        </div>
+        <p style="font-weight:700; color:var(--primary); font-size:20px; margin:12px 0;">Starting ৳${w.price}</p>
+        <p style="font-size:14px; margin-bottom:14px;">📞 ${w.phone || '-'}</p>
+        <button class="btn btn-primary" style="width:100%; margin-bottom:8px;" onclick="openRequest(${w.id})">📅 Request Service</button>
+        <button class="btn btn-outline" style="width:100%;" onclick="toast('Calling ${w.phone || 'worker'}...','success')">📞 Contact Worker</button>
+      </div>
+      <div class="form-container" style="max-width:100%;">
+        <h3 style="margin-bottom:14px;">🛠️ Skills</h3>
+        <div class="skills" style="margin-bottom:24px;">
+          ${w.skills.map(s => `<span class="skill-tag" style="padding:8px 16px; font-size:13px;">${s}</span>`).join('')}
+        </div>
+        <h3 style="margin-bottom:14px;">📜 Work History</h3>
+        <p style="color:#64748b; font-size:14px; margin-bottom:24px;">Completed ${w.jobs} jobs successfully.</p>
+        <h3 style="margin-bottom:14px;">⭐ Reviews (${(w.reviews||[]).length})</h3>
+        ${reviews}
+      </div>
+    </div>
+  `;
+  showPage('profile');
+}
+
+/* ============================================================
+   SERVICE REQUEST
+============================================================ */
+let currentWorkerId = null;
+function openRequest(id) {
+  if (!DB.get('session')) { toast('Please login first','error'); openAuth(); return; }
+  const w = DB.get('workers', []).find(x => x.id === id);
+  currentWorkerId = id;
+  document.getElementById('reqType').value = w.profession + ' - ' + w.name;
+  document.getElementById('requestModal').classList.add('show');
+}
+function closeRequest() { document.getElementById('requestModal').classList.remove('show'); }
+
+function submitRequest() {
+  const session = DB.get('session');
+  const w = DB.get('workers', []).find(x => x.id === currentWorkerId);
+  const req = {
+    id: Date.now(),
+    workerId: currentWorkerId,
+    workerName: w.name,
+    workerProfession: w.profession,
+    customerId: session.id,
+    customerName: session.name,
+    desc: document.getElementById('reqDesc').value,
+    address: document.getElementById('reqAddress').value,
+    date: document.getElementById('reqDate').value,
+    time: document.getElementById('reqTime').value,
+    budget: document.getElementById('reqBudget').value,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+  if (!req.desc || !req.address) { toast('Please fill all fields','error'); return; }
+  const reqs = DB.get('requests', []);
+  reqs.push(req);
+  DB.set('requests', reqs);
+  closeRequest();
+  toast('Service request sent successfully!','success');
+}
+
+/* ============================================================
+   AUTH
+============================================================ */
+function openAuth() { document.getElementById('authModal').classList.add('show'); }
+function closeAuth() { document.getElementById('authModal').classList.remove('show'); }
+
+function switchAuth(tab, btn) {
+  document.querySelectorAll('#authModal .tab-switch button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+function switchReg(type, btn) {
+  document.querySelectorAll('#registerForm .tab-switch button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('regCustomer').style.display = type === 'customer' ? 'block' : 'none';
+  document.getElementById('regWorker').style.display = type === 'worker' ? 'block' : 'none';
+}
+
+function doLogin() {
+  const role = document.getElementById('loginRole').value;
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+
+  if (role === 'admin') {
+    if (email === 'admin@fixmate.com' && pass === 'admin123') {
+      DB.set('session', {id:'admin', name:'Admin', role:'admin'});
+      closeAuth(); checkSession(); showPage('admin'); renderAdmin('overview');
+      toast('Welcome Admin!','success');
+    } else toast('Invalid admin credentials','error');
+    return;
+  }
+
+  if (!email || !pass) { toast('Please fill all fields','error'); return; }
+
+  if (role === 'customer') {
+    const cust = DB.get('customers', []).find(c => (c.email === email || c.phone === email) && c.password === pass);
+    if (cust) { DB.set('session', {...cust, role:'customer'}); closeAuth(); checkSession(); showPage('customerDash'); renderCustomer('overview'); toast('Welcome back, '+cust.name,'success'); }
+    else toast('Invalid credentials. Please register.','error');
+  } else if (role === 'worker') {
+    const w = DB.get('workers', []).find(w => w.email === email && w.password === pass);
+    if (w) { DB.set('session', {...w, role:'worker'}); closeAuth(); checkSession(); showPage('workerDash'); renderWorker('overview'); toast('Welcome back, '+w.name,'success'); }
+    else toast('Invalid credentials. Please register.','error');
+  }
+}
+
+/* ============================================================
+   REGISTER CUSTOMER (UPDATED with NID + Photos)
+============================================================ */
+async function registerCustomer() {
+  const name = document.getElementById('rcName').value.trim();
+  const email = document.getElementById('rcEmail').value.trim();
+  const phone = document.getElementById('rcPhone').value.trim();
+  const pass = document.getElementById('rcPass').value.trim();
+  const location = document.getElementById('rcLocation').value;
+  const nid = document.getElementById('rcNid').value.trim();
+
+  if (!name || !email || !pass) { 
+    toast('Please fill all required fields','error'); 
+    return; 
+  }
+  if (!nid || nid.length < 10) { 
+    toast('Please enter a valid NID number (10-17 digits)','error'); 
+    return; 
+  }
+  if (!document.getElementById('rcNidPhoto').files[0]) {
+    toast('Please upload your NID photo','error');
+    return;
+  }
+
+  const customers = DB.get('customers', []);
+  if (customers.find(c => c.email === email)) { 
+    toast('Email already registered','error'); 
+    return; 
+  }
+
+  toast('Processing registration...', '');
+  const profilePhoto = await getImageData('rcPhoto');
+  const nidPhoto = await getImageData('rcNidPhoto');
+
+  const newC = {
+    id: Date.now(),
+    name, email, phone, password: pass, location,
+    nid: nid,
+    nidPhoto: nidPhoto,
+    photo: profilePhoto || 'https://picsum.photos/200/200?random=' + Date.now(),
+    verified: false,
+    verificationStatus: 'pending',
+    role: 'customer'
+  };
+
+  customers.push(newC);
+  DB.set('customers', customers);
+  DB.set('session', newC);
+  
+  closeAuth(); 
+  checkSession(); 
+  showPage('customerDash'); 
+  renderCustomer('overview');
+  
+  toast('Registration successful! NID verification pending.', 'success');
+}
+
+/* ============================================================
+   REGISTER WORKER (UPDATED with NID + Photos)
+============================================================ */
+async function registerWorker() {
+  const name = document.getElementById('rwName').value.trim();
+  const phone = document.getElementById('rwPhone').value.trim();
+  const email = document.getElementById('rwEmail').value.trim();
+  const pass = document.getElementById('rwPass').value.trim();
+  const profession = document.getElementById('rwProfession').value;
+  const experience = parseInt(document.getElementById('rwExp').value) || 0;
+  const location = document.getElementById('rwLocation').value;
+  const skills = document.getElementById('rwSkills').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const nid = document.getElementById('rwNid').value.trim();
+
+  if (!name || !email || !pass) { 
+    toast('Please fill all required fields','error'); 
+    return; 
+  }
+  if (!nid || nid.length < 10) { 
+    toast('Please enter a valid NID number (10-17 digits)','error'); 
+    return; 
+  }
+  if (!document.getElementById('rwNidPhoto').files[0]) {
+    toast('Please upload your NID photo','error');
+    return;
+  }
+  if (!document.getElementById('rwPhoto').files[0]) {
+    toast('Please upload your profile photo','error');
+    return;
+  }
+
+  const workers = DB.get('workers', []);
+  if (workers.find(w => w.email === email)) { 
+    toast('Email already registered','error'); 
+    return; 
+  }
+
+  toast('Processing registration...', '');
+  const profilePhoto = await getImageData('rwPhoto');
+  const nidPhoto = await getImageData('rwNidPhoto');
+
+  const newW = {
+    id: Date.now(),
+    name, phone, email, password: pass, profession, experience, location,
+    skills: skills.length ? skills : ['General'],
+    nid: nid,
+    nidPhoto: nidPhoto,
+    photo: profilePhoto || 'https://picsum.photos/200/200?random=' + Date.now(),
+    verified: false,
+    verificationStatus: 'pending',
+    rating: 0, price: 400, available: true, jobs: 0, reviews: [],
+    role: 'worker'
+  };
+
+  workers.push(newW);
+  DB.set('workers', workers);
+  DB.set('session', newW);
+  
+  closeAuth(); 
+  checkSession(); 
+  showPage('workerDash'); 
+  renderWorker('overview');
+  
+  toast('Registration successful! NID verification pending.', 'success');
+}
+
+function logout() {
+  DB.set('session', null);
+  checkSession();
+  showPage('home');
+  toast('Logged out successfully','success');
+}
+
+function checkSession() {
+  const s = DB.get('session');
+  if (s) {
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('dashBtn').style.display = 'inline-flex';
+    document.getElementById('logoutBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('loginBtn').style.display = 'inline-flex';
+    document.getElementById('dashBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'none';
+  }
+}
+
+function goDashboard() {
+  const s = DB.get('session');
+  if (!s) return;
+  if (s.role === 'admin') { showPage('admin'); renderAdmin('overview'); }
+  else if (s.role === 'worker') { showPage('workerDash'); renderWorker('overview'); }
+  else { showPage('customerDash'); renderCustomer('overview'); }
+}
+
+/* ============================================================
+   CUSTOMER DASHBOARD
+============================================================ */
+function renderCustomer(tab) {
+  const s = DB.get('session');
+  const reqs = DB.get('requests', []).filter(r => r.customerId === s.id);
+  const c = document.getElementById('custContent');
+
+  if (tab === 'overview') {
+    const verBadge = s.verificationStatus === 'approved' ? 
+      '<span class="nid-badge approved">✅ NID Verified</span>' :
+      s.verificationStatus === 'rejected' ?
+      '<span class="nid-badge rejected">❌ NID Rejected</span>' :
+      '<span class="nid-badge pending">⏳ NID Pending</span>';
+    c.innerHTML = `
+      <h2>👋 Welcome, ${s.name} ${verBadge}</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><h4>Total Requests</h4><div class="num">${reqs.length}</div></div>
+        <div class="stat-card"><h4>Active Jobs</h4><div class="num">${reqs.filter(r=>r.status==='accepted').length}</div></div>
+        <div class="stat-card"><h4>Completed</h4><div class="num">${reqs.filter(r=>r.status==='completed').length}</div></div>
+        <div class="stat-card"><h4>Pending</h4><div class="num">${reqs.filter(r=>r.status==='pending').length}</div></div>
+      </div>
+      <h3 style="margin-bottom:14px;">Recent Requests</h3>
+      ${reqs.slice(-3).reverse().map(reqCard).join('') || '<p style="color:#64748b;">No requests yet.</p>'}
+    `;
+  } else if (tab === 'find') { showPage('find'); return; }
+  else if (tab === 'requests') {
+    c.innerHTML = `<h2>📋 My Requests</h2>${reqs.length ? reqs.map(reqCard).join('') : '<p style="color:#64748b;">No requests yet.</p>'}`;
+  } else if (tab === 'active') {
+    const active = reqs.filter(r=>r.status==='accepted');
+    c.innerHTML = `<h2>⚡ Active Jobs</h2>${active.length ? active.map(reqCard).join('') : '<p style="color:#64748b;">No active jobs.</p>'}`;
+  } else if (tab === 'completed') {
+    const comp = reqs.filter(r=>r.status==='completed');
+    c.innerHTML = `<h2>✅ Completed Jobs</h2>${comp.length ? comp.map(r=>reqCard(r,true)).join('') : '<p style="color:#64748b;">No completed jobs.</p>'}`;
+  } else if (tab === 'favorites') {
+    c.innerHTML = `<h2>❤️ Favourite Workers</h2><p style="color:#64748b;">No favourites yet. Browse workers and save them.</p>`;
+  } else if (tab === 'reviews') {
+    c.innerHTML = `<h2>⭐ My Reviews</h2><p style="color:#64748b;">You haven't written any reviews yet.</p>`;
+  } else if (tab === 'profile') {
+    c.innerHTML = `<h2>👤 My Profile</h2>
+      <div class="form-container" style="max-width:500px; margin:0;">
+        ${s.photo ? `<div style="text-align:center; margin-bottom:16px;"><img src="${s.photo}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid var(--primary);"></div>` : ''}
+        <div class="form-group"><label>Name</label><input type="text" value="${s.name}" readonly></div>
+        <div class="form-group"><label>Email</label><input type="text" value="${s.email||'-'}" readonly></div>
+        <div class="form-group"><label>Phone</label><input type="text" value="${s.phone||'-'}" readonly></div>
+        <div class="form-group"><label>Location</label><input type="text" value="${s.location||'-'}" readonly></div>
+        <div class="form-group"><label>NID Number</label><input type="text" value="${s.nid||'-'}" readonly></div>
+        <div class="form-group"><label>Verification Status</label>
+          <div style="padding:10px; background:var(--light); border-radius:8px;">
+            ${s.verificationStatus === 'approved' ? '✅ Approved' : s.verificationStatus === 'rejected' ? '❌ Rejected' : '⏳ Pending Review'}
+          </div>
+        </div>
+      </div>`;
+  } else if (tab === 'settings') {
+    c.innerHTML = `<h2>⚙️ Settings</h2><p style="color:#64748b;">Settings panel coming soon.</p>`;
+  }
+}
+
+function custTab(tab, el) {
+  document.querySelectorAll('#page-customerDash .sidebar-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  renderCustomer(tab);
+}
+
+function reqCard(r, allowReview) {
+  return `
+    <div class="request-card">
+      <h4>${r.workerProfession} - ${r.workerName}</h4>
+      <p><strong>Description:</strong> ${r.desc}</p>
+      <p><strong>Address:</strong> ${r.address}</p>
+      <p><strong>Date:</strong> ${r.date || '-'} ${r.time || ''}</p>
+      <p><strong>Budget:</strong> ৳${r.budget || '-'}</p>
+      <p><span class="status ${r.status}">${r.status}</span></p>
+      ${allowReview && r.status === 'completed' ? `<button class="btn btn-accent" style="margin-top:8px; padding:6px 14px; font-size:13px;" onclick="openReview(${r.workerId})">⭐ Write Review</button>` : ''}
+    </div>`;
+}
+
+/* ============================================================
+   WORKER DASHBOARD
+============================================================ */
+function renderWorker(tab) {
+  const s = DB.get('session');
+  const allReqs = DB.get('requests', []).filter(r => r.workerId === s.id);
+  const c = document.getElementById('workContent');
+
+  if (tab === 'overview') {
+    const verBadge = s.verificationStatus === 'approved' ? 
+      '<span class="nid-badge approved">✅ NID Verified</span>' :
+      s.verificationStatus === 'rejected' ?
+      '<span class="nid-badge rejected">❌ NID Rejected</span>' :
+      '<span class="nid-badge pending">⏳ NID Pending</span>';
+    c.innerHTML = `
+      <h2>👋 Welcome, ${s.name} ${verBadge}</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><h4>Total Requests</h4><div class="num">${allReqs.length}</div></div>
+        <div class="stat-card"><h4>Accepted</h4><div class="num">${allReqs.filter(r=>r.status==='accepted').length}</div></div>
+        <div class="stat-card"><h4>Completed</h4><div class="num">${allReqs.filter(r=>r.status==='completed').length}</div></div>
+        <div class="stat-card"><h4>Earnings</h4><div class="num">৳${allReqs.filter(r=>r.status==='completed').reduce((s,r)=>s+(parseInt(r.budget)||0),0)}</div></div>
+      </div>
+      <h3 style="margin-bottom:14px;">Recent Service Requests</h3>
+      ${allReqs.slice(-3).reverse().map(r=>workerReqCard(r)).join('') || '<p style="color:#64748b;">No requests yet.</p>'}
+    `;
+  } else if (tab === 'profile') {
+    c.innerHTML = `<h2>👤 My Profile</h2>
+      <div class="form-container" style="max-width:500px; margin:0;">
+        ${s.photo ? `<div style="text-align:center; margin-bottom:16px;"><img src="${s.photo}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid var(--primary);"></div>` : ''}
+        <div class="form-group"><label>Name</label><input type="text" value="${s.name}" readonly></div>
+        <div class="form-group"><label>Profession</label><input type="text" value="${s.profession}" readonly></div>
+        <div class="form-group"><label>Experience</label><input type="text" value="${s.experience} years" readonly></div>
+        <div class="form-group"><label>Location</label><input type="text" value="${s.location}" readonly></div>
+        <div class="form-group"><label>Rating</label><input type="text" value="⭐ ${s.rating}" readonly></div>
+        <div class="form-group"><label>Skills</label><input type="text" value="${s.skills.join(', ')}" readonly></div>
+        <div class="form-group"><label>NID Number</label><input type="text" value="${s.nid||'-'}" readonly></div>
+        <div class="form-group"><label>Verification Status</label>
+          <div style="padding:10px; background:var(--light); border-radius:8px;">
+            ${s.verificationStatus === 'approved' ? '✅ Approved' : s.verificationStatus === 'rejected' ? '❌ Rejected' : '⏳ Pending Review'}
+          </div>
+        </div>
+      </div>`;
+  } else if (tab === 'requests') {
+    const pending = allReqs.filter(r=>r.status==='pending');
+    c.innerHTML = `<h2>📥 Service Requests</h2>${pending.length ? pending.map(r=>workerReqCard(r,true)).join('') : '<p style="color:#64748b;">No pending requests.</p>'}`;
+  } else if (tab === 'accepted') {
+    const acc = allReqs.filter(r=>r.status==='accepted');
+    c.innerHTML = `<h2>✅ Accepted Jobs</h2>${acc.length ? acc.map(r=>workerReqCard(r,true)).join('') : '<p style="color:#64748b;">No accepted jobs.</p>'}`;
+  } else if (tab === 'completed') {
+    const comp = allReqs.filter(r=>r.status==='completed');
+    c.innerHTML = `<h2>🎯 Completed Jobs</h2>${comp.length ? comp.map(r=>workerReqCard(r)).join('') : '<p style="color:#64748b;">No completed jobs.</p>'}`;
+  } else if (tab === 'reviews') {
+    c.innerHTML = `<h2>⭐ Reviews</h2>${(s.reviews||[]).length ? s.reviews.map(r=>`<div class="review-card"><div class="stars">${'★'.repeat(r.stars)}</div><p>${r.text}</p><div class="author">— ${r.author}</div></div>`).join('') : '<p style="color:#64748b;">No reviews yet.</p>'}`;
+  } else if (tab === 'earnings') {
+    const total = allReqs.filter(r=>r.status==='completed').reduce((s,r)=>s+(parseInt(r.budget)||0),0);
+    c.innerHTML = `<h2>💰 Earnings</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><h4>Total Earnings</h4><div class="num">৳${total}</div></div>
+        <div class="stat-card"><h4>Completed Jobs</h4><div class="num">${allReqs.filter(r=>r.status==='completed').length}</div></div>
+      </div>`;
+  } else if (tab === 'availability') {
+    const workers = DB.get('workers', []);
+    const idx = workers.findIndex(w => w.id === s.id);
+    const isAvail = workers[idx].available;
+    c.innerHTML = `<h2>🟢 Availability Status</h2>
+      <div class="form-container" style="max-width:400px; margin:0;">
+        <p style="margin-bottom:14px;">Current Status: <strong style="color:${isAvail?'var(--success)':'var(--danger)'}">${isAvail?'Available':'Busy'}</strong></p>
+        <button class="btn ${isAvail?'btn-danger':'btn-success'}" style="width:100%;" onclick="toggleAvailability()">Switch to ${isAvail?'Busy':'Available'}</button>
+      </div>`;
+  } else if (tab === 'settings') {
+    c.innerHTML = `<h2>⚙️ Settings</h2><p style="color:#64748b;">Settings panel coming soon.</p>`;
+  }
+}
+
+function workerReqCard(r, actions) {
+  return `
+    <div class="request-card">
+      <h4>${r.customerName} - ${r.workerProfession}</h4>
+      <p><strong>Description:</strong> ${r.desc}</p>
+      <p><strong>Address:</strong> ${r.address}</p>
+      <p><strong>Date:</strong> ${r.date || '-'} ${r.time || ''}</p>
+      <p><strong>Budget:</strong> ৳${r.budget || '-'}</p>
+      <p><span class="status ${r.status}">${r.status}</span></p>
+      ${actions ? `
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          ${r.status==='pending' ? `<button class="btn btn-success" style="padding:6px 14px; font-size:13px;" onclick="updateReqStatus(${r.id},'accepted')">Accept</button>
+          <button class="btn btn-danger" style="padding:6px 14px; font-size:13px;" onclick="updateReqStatus(${r.id},'rejected')">Reject</button>` : ''}
+          ${r.status==='accepted' ? `<button class="btn btn-primary" style="padding:6px 14px; font-size:13px;" onclick="updateReqStatus(${r.id},'completed')">Mark Completed</button>` : ''}
+        </div>` : ''}
+    </div>`;
+}
+
+function updateReqStatus(id, status) {
+  const reqs = DB.get('requests', []);
+  const idx = reqs.findIndex(r => r.id === id);
+  if (idx > -1) {
+    reqs[idx].status = status;
+    DB.set('requests', reqs);
+    toast('Request ' + status + '!','success');
+    const s = DB.get('session');
+    if (s.role === 'worker') renderWorker(document.querySelector('#page-workerDash .sidebar-item.active').textContent.includes('Request') ? 'requests' : 'overview');
+  }
+}
+
+function toggleAvailability() {
+  const s = DB.get('session');
+  const workers = DB.get('workers', []);
+  const idx = workers.findIndex(w => w.id === s.id);
+  workers[idx].available = !workers[idx].available;
+  DB.set('workers', workers);
+  DB.set('session', {...s, available: workers[idx].available});
+  renderWorker('availability');
+  toast('Status updated!','success');
+}
+
+function workTab(tab, el) {
+  document.querySelectorAll('#page-workerDash .sidebar-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  renderWorker(tab);
+}
+
+/* ============================================================
+   ADMIN PANEL
+============================================================ */
+function renderAdmin(tab) {
+  const c = document.getElementById('adminContent');
+  const workers = DB.get('workers', []);
+  const customers = DB.get('customers', []);
+  const requests = DB.get('requests', []);
+
+  if (tab === 'overview') {
+    const pendingVerifications = workers.filter(w=>w.verificationStatus==='pending').length 
+      + customers.filter(cu=>cu.verificationStatus==='pending').length;
+    c.innerHTML = `
+      <h2>📊 Admin Dashboard</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><h4>Total Workers</h4><div class="num">${workers.length}</div></div>
+        <div class="stat-card"><h4>Total Customers</h4><div class="num">${customers.length}</div></div>
+        <div class="stat-card"><h4>Total Services</h4><div class="num">${requests.length}</div></div>
+        <div class="stat-card"><h4>Pending Requests</h4><div class="num">${requests.filter(r=>r.status==='pending').length}</div></div>
+        <div class="stat-card" style="border-left-color:var(--accent);"><h4>Pending Verifications</h4><div class="num" style="color:var(--accent);">${pendingVerifications}</div></div>
+      </div>
+      <h3 style="margin-bottom:14px;">Recent Activity</h3>
+      ${requests.slice(-5).reverse().map(r=>`<div class="request-card"><h4>${r.customerName} → ${r.workerName}</h4><p>${r.desc}</p><p><span class="status ${r.status}">${r.status}</span></p></div>`).join('') || '<p style="color:#64748b;">No activity yet.</p>'}
+    `;
+  } else if (tab === 'workers') {
+    c.innerHTML = `<h2>👷 Manage Workers</h2>
+      <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:14px; min-width:700px;">
+        <tr style="background:var(--light); text-align:left;">
+          <th style="padding:10px;">Photo</th>
+          <th style="padding:10px;">Name</th>
+          <th style="padding:10px;">Profession</th>
+          <th style="padding:10px;">Location</th>
+          <th style="padding:10px;">Rating</th>
+          <th style="padding:10px;">Verified</th>
+          <th style="padding:10px;">Action</th>
+        </tr>
+        ${workers.map(w=>`<tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px;">
+            <img src="${w.photo || 'https://picsum.photos/40?random='+w.id}" 
+                 style="width:40px; height:40px; border-radius:50%; object-fit:cover;"
+                 onerror="this.src='https://picsum.photos/40?random='+${w.id}">
+          </td>
+          <td style="padding:10px;">${w.name}</td>
+          <td style="padding:10px;">${w.profession}</td>
+          <td style="padding:10px;">${w.location}</td>
+          <td style="padding:10px;">⭐${w.rating}</td>
+          <td style="padding:10px;">${w.verified?'✅':'❌'}</td>
+          <td style="padding:10px;">
+            <button class="btn btn-danger" style="padding:5px 12px; font-size:12px;" 
+                    onclick="deleteWorker(${w.id})">🗑️ Delete</button>
+          </td>
+        </tr>`).join('')}
+      </table>
+      </div>`;
+  } else if (tab === 'verify') {
+    const pendingWorkers = workers.filter(w => w.verificationStatus === 'pending');
+    const pendingCustomers = customers.filter(cu => cu.verificationStatus === 'pending');
+    
+    c.innerHTML = `<h2>✅ NID Verification Requests</h2>
+    
+      <h3 style="margin:20px 0 14px; color:var(--primary);">👷 Workers (${pendingWorkers.length})</h3>
+      ${pendingWorkers.length ? pendingWorkers.map(w => `
+        <div class="request-card" style="padding:20px;">
+          <div style="display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;">
+            <div style="text-align:center;">
+              <img src="${w.photo || 'https://picsum.photos/80?random='+w.id}" 
+                   style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);"
+                   onerror="this.src='https://picsum.photos/80?random='+${w.id}">
+              <p style="font-size:11px; color:var(--gray); margin-top:4px;">Profile</p>
+            </div>
+            <div style="text-align:center;">
+              <img src="${w.nidPhoto || 'https://picsum.photos/120/80?random='+w.id}" 
+                   style="width:120px; height:80px; border-radius:8px; object-fit:cover; border:2px solid var(--accent); cursor:pointer;"
+                   onclick="showFullImage('${w.nidPhoto}')"
+                   onerror="this.src='https://picsum.photos/120/80?random='+${w.id}">
+              <p style="font-size:11px; color:var(--gray); margin-top:4px;">NID Photo</p>
+            </div>
+            <div style="flex:1; min-width:180px;">
+              <h4 style="margin-bottom:6px;">${w.name}</h4>
+              <p style="font-size:13px;">🏷️ ${w.profession} • 📍 ${w.location}</p>
+              <p style="font-size:13px;">📱 ${w.phone || '-'}</p>
+              <p style="font-size:13px;"><strong>NID:</strong> ${w.nid || 'Not provided'}</p>
+              <p style="font-size:13px;"><strong>Email:</strong> ${w.email || '-'}</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="btn btn-success" style="padding:8px 16px; font-size:13px;" 
+                      onclick="approveVerification(${w.id},'worker')">✅ Approve</button>
+              <button class="btn btn-danger" style="padding:8px 16px; font-size:13px;" 
+                      onclick="rejectVerification(${w.id},'worker')">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      `).join('') : '<p style="color:#64748b;">No pending worker verifications.</p>'}
+      
+      <h3 style="margin:30px 0 14px; color:var(--primary);">👥 Customers (${pendingCustomers.length})</h3>
+      ${pendingCustomers.length ? pendingCustomers.map(cu => `
+        <div class="request-card" style="padding:20px;">
+          <div style="display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;">
+            <div style="text-align:center;">
+              <img src="${cu.photo || 'https://picsum.photos/80?random='+cu.id}" 
+                   style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);"
+                   onerror="this.src='https://picsum.photos/80?random='+${cu.id}">
+              <p style="font-size:11px; color:var(--gray); margin-top:4px;">Profile</p>
+            </div>
+            <div style="text-align:center;">
+              <img src="${cu.nidPhoto || 'https://picsum.photos/120/80?random='+cu.id}" 
+                   style="width:120px; height:80px; border-radius:8px; object-fit:cover; border:2px solid var(--accent); cursor:pointer;"
+                   onclick="showFullImage('${cu.nidPhoto}')"
+                   onerror="this.src='https://picsum.photos/120/80?random='+${cu.id}">
+              <p style="font-size:11px; color:var(--gray); margin-top:4px;">NID Photo</p>
+            </div>
+            <div style="flex:1; min-width:180px;">
+              <h4 style="margin-bottom:6px;">${cu.name}</h4>
+              <p style="font-size:13px;">📍 ${cu.location || '-'}</p>
+              <p style="font-size:13px;">📱 ${cu.phone || '-'}</p>
+              <p style="font-size:13px;"><strong>NID:</strong> ${cu.nid || 'Not provided'}</p>
+              <p style="font-size:13px;"><strong>Email:</strong> ${cu.email || '-'}</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="btn btn-success" style="padding:8px 16px; font-size:13px;" 
+                      onclick="approveVerification(${cu.id},'customer')">✅ Approve</button>
+              <button class="btn btn-danger" style="padding:8px 16px; font-size:13px;" 
+                      onclick="rejectVerification(${cu.id},'customer')">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      `).join('') : '<p style="color:#64748b;">No pending customer verifications.</p>'}
+    `;
+  } else if (tab === 'customers') {
+    c.innerHTML = `<h2>👥 Manage Customers</h2>${customers.length ? customers.map(cu=>`<div class="request-card"><h4>${cu.name}</h4><p>📧 ${cu.email} • 📱 ${cu.phone||'-'} • 📍 ${cu.location||'-'}</p><p><strong>NID:</strong> ${cu.nid||'-'} • Status: ${cu.verificationStatus==='approved'?'✅ Verified':cu.verificationStatus==='rejected'?'❌ Rejected':'⏳ Pending'}</p></div>`).join('') : '<p style="color:#64748b;">No customers registered.</p>'}`;
+  } else if (tab === 'categories') {
+    c.innerHTML = `<h2>📂 Categories</h2><div class="cat-grid">${CATEGORIES.map(cat=>`<div class="cat-card"><div class="cat-icon">${cat.icon}</div><p>${cat.name}</p></div>`).join('')}</div>`;
+  } else if (tab === 'requests') {
+    c.innerHTML = `<h2>📋 All Service Requests</h2>${requests.length ? requests.map(r=>`<div class="request-card"><h4>${r.customerName} → ${r.workerName}</h4><p>${r.desc}</p><p><span class="status ${r.status}">${r.status}</span></p></div>`).join('') : '<p style="color:#64748b;">No requests yet.</p>'}`;
+  } else if (tab === 'reviews') {
+    const allReviews = workers.flatMap(w => (w.reviews||[]).map(r => ({...r, worker: w.name})));
+    c.innerHTML = `<h2>⭐ All Reviews</h2>${allReviews.length ? allReviews.map(r=>`<div class="review-card"><div class="stars">${'★'.repeat(r.stars)}</div><p>${r.text}</p><div class="author">— ${r.author} on ${r.worker}</div></div>`).join('') : '<p style="color:#64748b;">No reviews yet.</p>'}`;
+  } else if (tab === 'reports') {
+    c.innerHTML = `<h2>🚨 Reports</h2><p style="color:#64748b;">No reports yet.</p>`;
+  } else if (tab === 'complaints') {
+    c.innerHTML = `<h2>⚠️ Complaints</h2><p style="color:#64748b;">No complaints yet.</p>`;
+  } else if (tab === 'settings') {
+    c.innerHTML = `<h2>⚙️ Website Settings</h2>
+      <div class="form-container" style="max-width:500px; margin:0;">
+        <div class="form-group"><label>Site Name</label><input type="text" value="FixMate"></div>
+        <div class="form-group"><label>Tagline</label><input type="text" value="Find Trusted Workers Near You"></div>
+        <div class="form-group"><label>Support Email</label><input type="text" value="support@fixmate.com"></div>
+        <div class="form-group"><label>Support Phone</label><input type="text" value="+880 1XXX-XXXXXX"></div>
+        <button class="btn btn-primary" onclick="toast('Settings saved!','success')">Save Settings</button>
+      </div>`;
+  }
+}
+
+function adminTab(tab, el) {
+  document.querySelectorAll('#page-admin .sidebar-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  renderAdmin(tab);
+}
+
+/* ============================================================
+   NID VERIFICATION (NEW)
+============================================================ */
+function approveVerification(id, type) {
+  const key = type === 'worker' ? 'workers' : 'customers';
+  const list = DB.get(key, []);
+  const idx = list.findIndex(x => x.id === id);
+  if (idx > -1) {
+    list[idx].verified = true;
+    list[idx].verificationStatus = 'approved';
+    DB.set(key, list);
+    renderAdmin('verify');
+    toast(`${type === 'worker' ? 'Worker' : 'Customer'} verified successfully!`, 'success');
+  }
+}
+
+function rejectVerification(id, type) {
+  if (!confirm('Reject this verification? User will be notified.')) return;
+  const key = type === 'worker' ? 'workers' : 'customers';
+  const list = DB.get(key, []);
+  const idx = list.findIndex(x => x.id === id);
+  if (idx > -1) {
+    list[idx].verified = false;
+    list[idx].verificationStatus = 'rejected';
+    DB.set(key, list);
+    renderAdmin('verify');
+    toast(`${type === 'worker' ? 'Worker' : 'Customer'} verification rejected`, 'error');
+  }
+}
+
+function showFullImage(src) {
+  if (!src) { toast('No image available','error'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay show';
+  overlay.style.zIndex = '3000';
+  overlay.innerHTML = `
+    <div style="max-width:90%; max-height:90vh; position:relative;">
+      <img src="${src}" style="max-width:100%; max-height:85vh; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.5);">
+      <button onclick="this.parentElement.parentElement.remove()" 
+              style="position:absolute; top:-15px; right:-15px; width:40px; height:40px; 
+                     border-radius:50%; background:var(--danger); color:white; font-size:20px; 
+                     cursor:pointer; border:3px solid white;">✕</button>
+    </div>
+  `;
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function verifyWorker(id) {
+  approveVerification(id, 'worker');
+}
+
+/* ============================================================
+   DELETE WORKER
+============================================================ */
+let pendingDeleteId = null;
+
+function deleteWorker(id) {
+  const worker = DB.get('workers', []).find(w => w.id === id);
+  if (!worker) { toast('Worker not found', 'error'); return; }
+  
+  pendingDeleteId = id;
+  document.getElementById('deleteMsg').textContent = 
+    `"${worker.name}" (${worker.profession}) কে delete করতে চান? এটি undo করা যাবে না।`;
+  document.getElementById('deleteModal').classList.add('show');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+  pendingDeleteId = null;
+}
+
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  
+  const workers = DB.get('workers', []);
+  const worker = workers.find(w => w.id === pendingDeleteId);
+  if (!worker) { closeDeleteModal(); return; }
+  
+  DB.set('workers', workers.filter(w => w.id !== pendingDeleteId));
+  DB.set('requests', DB.get('requests', []).filter(r => r.workerId !== pendingDeleteId));
+  
+  closeDeleteModal();
+  renderAdmin('workers');
+  toast(`${worker.name} deleted successfully!`, 'success');
+}
+
+/* ============================================================
+   REVIEW
+============================================================ */
+let reviewStars = 0;
+let reviewWorkerId = null;
+function openReview(workerId) {
+  reviewWorkerId = workerId;
+  reviewStars = 0;
+  document.getElementById('starPicker').innerHTML = [1,2,3,4,5].map(i=>`<span onclick="setStar(${i})" style="color:#cbd5e1;">★</span>`).join('');
+  document.getElementById('reviewModal').classList.add('show');
+}
+function closeReview() { document.getElementById('reviewModal').classList.remove('show'); }
+function setStar(n) {
+  reviewStars = n;
+  document.getElementById('starPicker').innerHTML = [1,2,3,4,5].map(i=>`<span onclick="setStar(${i})" style="color:${i<=n?'#f59e0b':'#cbd5e1'};">★</span>`).join('');
+}
+function submitReview() {
+  if (reviewStars === 0) { toast('Please select a rating','error'); return; }
+  const text = document.getElementById('reviewText').value.trim();
+  const workers = DB.get('workers', []);
+  const idx = workers.findIndex(w => w.id === reviewWorkerId);
+  if (idx > -1) {
+    if (!workers[idx].reviews) workers[idx].reviews = [];
+    workers[idx].reviews.push({stars: reviewStars, text: text || 'No comment', author: DB.get('session')?.name || 'Anonymous'});
+    const total = workers[idx].reviews.reduce((s,r)=>s+r.stars,0);
+    workers[idx].rating = (total / workers[idx].reviews.length).toFixed(1);
+    DB.set('workers', workers);
+    closeReview();
+    toast('Review submitted!','success');
+    renderCustomer('completed');
+  }
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast ' + type, 3000);
+}
+</script>
+</body>
+</html>
